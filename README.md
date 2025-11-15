@@ -3,16 +3,16 @@
 A comprehensive Streamlit web application for analyzing crime patterns in India and predicting crime types using machine learning.
 
 ## 📋 Table of Contents
-- [Overview](#overview)
-- [Features](#features)
-- [Demo](#demo)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Project Structure](#project-structure)
-- [Model Details](#model-details)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
-- [License](#license)
+- [Overview]
+- [Features]
+- [Demo]
+- [Installation]
+- [Usage]
+- [Project Structure]
+- [Model Details]
+- [Deployment]
+- [Contributing]
+- [License]
 
 ## 🎯 Overview
 

@@ -1372,11 +1372,43 @@ def show_predictions():
                             input_data['Month'] = ['January', 'February', 'March', 'April', 'May', 'June',
                                                  'July', 'August', 'September', 'October', 'November', 'December'].index(month) + 1
                         
-                        # Add other features with default values
+                        # Handle encoded categorical features properly
                         for col in st.session_state.feature_columns:
                             if col not in input_data:
-                                if col in analyzer.df.columns:
-                                    # Use median for numeric, mode for categorical
+                                if col.endswith('_encoded'):
+                                    # Handle encoded categorical features
+                                    base_col = col.replace('_encoded', '')
+                                    if base_col in analyzer.encoders:
+                                        encoder = analyzer.encoders[base_col]
+                                        
+                                        # Determine the value to encode based on user selection
+                                        if base_col == location_cols[0] if location_cols else None:
+                                            value_to_encode = selected_location
+                                        elif base_col == categorical_cols[0] if len(categorical_cols) > 0 else None:
+                                            value_to_encode = selected_type
+                                        else:
+                                            # Use the most common value from training data
+                                            if base_col in analyzer.df.columns:
+                                                value_to_encode = analyzer.df[base_col].mode()[0] if len(analyzer.df[base_col].mode()) > 0 else 'Unknown'
+                                            else:
+                                                value_to_encode = 'Unknown'
+                                        
+                                        # Safely encode the value
+                                        try:
+                                            # Check if the value exists in the encoder's classes
+                                            if hasattr(encoder, 'classes_') and value_to_encode in encoder.classes_:
+                                                input_data[col] = encoder.transform([str(value_to_encode)])[0]
+                                            else:
+                                                # Use the most common encoded value from training data
+                                                input_data[col] = analyzer.df[col].mode()[0] if len(analyzer.df[col].mode()) > 0 else 0
+                                        except:
+                                            # Fallback to most common value
+                                            input_data[col] = analyzer.df[col].mode()[0] if len(analyzer.df[col].mode()) > 0 else 0
+                                    else:
+                                        # No encoder available, use default
+                                        input_data[col] = 0
+                                elif col in analyzer.df.columns:
+                                    # Handle regular features
                                     if analyzer.df[col].dtype in ['int64', 'float64']:
                                         input_data[col] = analyzer.df[col].median()
                                     else:
@@ -1384,8 +1416,18 @@ def show_predictions():
                                 else:
                                     input_data[col] = 0
                         
-                        # Create DataFrame for prediction
-                        input_df = pd.DataFrame([input_data])
+                        # Ensure all required features are present with correct data types
+                        for col in st.session_state.feature_columns:
+                            if col not in input_data:
+                                input_data[col] = 0
+                            # Convert to appropriate numeric type
+                            try:
+                                input_data[col] = float(input_data[col])
+                            except:
+                                input_data[col] = 0.0
+                        
+                        # Create DataFrame for prediction with correct column order
+                        input_df = pd.DataFrame([input_data])[st.session_state.feature_columns]
                         
                         # Make prediction
                         prediction = st.session_state.prediction_model.predict(input_df)[0]
